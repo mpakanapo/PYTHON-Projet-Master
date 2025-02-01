@@ -6,77 +6,82 @@ client = MongoClient("mongodb://localhost:27017/")
 db = client["gestion_marche"]
 marche_collection = db["marche"]
 
-# Structure JSON pour un marché
-def creer_marche(nom, x, y, ampiladex, ampiladey, marchands=[]):
-    marche = {
-        "nom": nom,
-        "coordonnees": {"x": x, "y": y},
-        "dimensions": {"ampiladex": ampiladex, "ampiladey": ampiladey},
-        "marchands": marchands
-    }
-    return marche_collection.insert_one(marche).inserted_id
+# Création d'un marché
+def creer_marche(nom, X, Y, amplitudeX, amplitudeY, marchands=[]):
+    try:
+        marche = {
+            "nom": nom,
+            "coordonnees": {"X": X, "Y": Y},
+            "dimensions": {"amplitudeX": amplitudeX, "amplitudeY": amplitudeY},
+            "marchands": marchands
+        }
+        result = marche_collection.insert_one(marche)
+        return f"Marché créé avec ID: {result.inserted_id}"
+    except Exception as e:
+        return f"Erreur lors de la création du marché: {str(e)}"
 
 # Ajouter un marchand
 def ajouter_marchand(nom_marche, marchand):
-    marche_collection.update_one(
-        {"nom": nom_marche},
-        {"$push": {"marchands": marchand}}
-    )
+    try:
+        result = marche_collection.update_one(
+            {"nom": nom_marche},
+            {"$push": {"marchands": marchand}}
+        )
+        return "Marchand ajouté avec succès" if result.modified_count > 0 else "Marché non trouvé"
+    except Exception as e:
+        return f"Erreur lors de l'ajout du marchand: {str(e)}"
 
 # Lire tous les marchés
 def lire_marches():
-    return list(marche_collection.find({}, {"_id": 0}))
+    try:
+        return list(marche_collection.find({}, {"_id": 0}))
+    except Exception as e:
+        return f"Erreur lors de la lecture des marchés: {str(e)}"
 
-# Mettre à jour un marchand dans un marché
+# Mettre à jour un marchand
 def mettre_a_jour_marchand(nom_marche, nom_marchand, new_data):
-    marche_collection.update_one(
-        {"nom": nom_marche, "marchands.nom": nom_marchand},
-        {"$set": {"marchands.$": new_data}}
-    )
+    try:
+        result = marche_collection.update_one(
+            {"nom": nom_marche, "marchands.nom": nom_marchand},
+            {"$set": {"marchands.$": new_data}}
+        )
+        return "Marchand mis à jour avec succès" if result.modified_count > 0 else "Marchand ou marché non trouvé"
+    except Exception as e:
+        return f"Erreur lors de la mise à jour du marchand: {str(e)}"
 
-# Supprimer un marchand d'un marché
+# Supprimer un marchand
 def supprimer_marchand(nom_marche, nom_marchand):
-    marche_collection.update_one(
-        {"nom": nom_marche},
-        {"$pull": {"marchands": {"nom": nom_marchand}}}
-    )
+    try:
+        result = marche_collection.update_one(
+            {"nom": nom_marche},
+            {"$pull": {"marchands": {"nom": nom_marchand}}}
+        )
+        return "Marchand supprimé avec succès" if result.modified_count > 0 else "Marchand ou marché non trouvé"
+    except Exception as e:
+        return f"Erreur lors de la suppression du marchand: {str(e)}"
 
 # Supprimer un marché
 def supprimer_marche(nom_marche):
-    marche_collection.delete_one({"nom": nom_marche})
+    try:
+        result = marche_collection.delete_one({"nom": nom_marche})
+        return "Marché supprimé avec succès" if result.deleted_count > 0 else "Marché non trouvé"
+    except Exception as e:
+        return f"Erreur lors de la suppression du marché: {str(e)}"
 
 # Exemple d'utilisation
 if __name__ == "__main__":
-    # Création d'un marché
-    id_marche = creer_marche("Grand Marché", 10, 20, 100, 50)
-    print(f"Marché créé avec ID: {id_marche}")
-    
-    # Ajout d'un marchand
+    print(creer_marche("Grand Marché", 10, 20, 100, 50))
     marchand = {
         "nom": "Jean",
-        "coordonnees": {"x": 5, "y": 10},
-        "dimensions": {"ampiladex": 10, "ampiladey": 5},
-        "produits": [
-            {"nomProduit": "Pomme", "quantiteStock": 50, "prix": 2}
-        ],
+        "coordonnees": {"X": 5, "Y": 10},
+        "dimensions": {"amplitudeX": 10, "amplitudeY": 5},
+        "produits": [{"nomProduit": "Pomme", "quantiteStock": 50, "prix": 2}],
         "ventes": []
     }
-    ajouter_marchand("Grand Marché", marchand)
-    print("Marchand ajouté")
-    
-    # Lecture des marchés
+    print(ajouter_marchand("Grand Marché", marchand))
     print(lire_marches())
-    
-    # Mise à jour du marchand
     marchand_update = marchand.copy()
     marchand_update["produits"].append({"nomProduit": "Banane", "quantiteStock": 30, "prix": 1})
-    mettre_a_jour_marchand("Grand Marché", "Jean", marchand_update)
-    print("Marchand mis à jour")
-    
-    # Suppression d'un marchand
-    supprimer_marchand("Grand Marché", "Jean")
-    print("Marchand supprimé")
-    
-    # Suppression du marché
-    supprimer_marche("Grand Marché")
-    print("Marché supprimé")
+    print(mettre_a_jour_marchand("Grand Marché", "Jean", marchand_update))
+    print(supprimer_marchand("Grand Marché", "Jean"))
+    print(supprimer_marche("Grand Marché"))
